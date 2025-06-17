@@ -1,0 +1,11 @@
+Flask
+flask-cors
+pandas
+numpy
+scikit-learn
+causal-learn # For PC algorithm
+networkx
+plotly
+streamlit
+requests # For Streamlit to communicate with Flask
+watchfiles # For auto_refresh.py (if implemented for background tasks)
