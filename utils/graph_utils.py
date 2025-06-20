@@ -1,6 +1,7 @@
 # utils/graph_utils.py
 import networkx as nx
 import plotly.graph_objects as go
+import numpy as np
 
 def visualize_graph(graph):
     """
@@ -58,3 +59,49 @@ def visualize_graph(graph):
         )
     )
     return fig.to_json()
+
+def get_graph_summary_for_chatbot(graph_adj, nodes):
+    """
+    Generates a text summary of the causal graph for the chatbot.
+    """
+    if not graph_adj or not nodes:
+        return "No causal graph discovered yet."
+
+    adj_matrix = np.array(graph_adj)
+    G = nx.DiGraph(adj_matrix)
+    
+    # Relabel nodes with actual names
+    mapping = {i: node_name for i, node_name in enumerate(nodes)}
+    G = nx.relabel_nodes(G, mapping)
+
+    num_nodes = G.number_of_nodes()
+    num_edges = G.number_of_edges()
+
+    summary = (
+        f"The causal graph has {num_nodes} variables (nodes) and {num_edges} causal relationships (directed edges).\n"
+        "The variables are: " + ", ".join(nodes) + ".\n"
+    )
+    
+    # Add some basic structural info
+    if nx.is_directed_acyclic_graph(G):
+        summary += "The graph is a Directed Acyclic Graph (DAG), which is typical for causal models.\n"
+    else:
+        summary += "The graph contains cycles, which might indicate feedback loops or issues with the discovery algorithm for a DAG model.\n"
+    
+    # Smallest graphs: list all edges
+    if num_edges > 0 and num_edges < 10: # Avoid listing too many edges for large graphs
+        edge_list = [f"{u} -> {v}" for u, v in G.edges()]
+        summary += "The discovered relationships are: " + ", ".join(edge_list) + ".\n"
+    elif num_edges >= 10:
+        summary += "There are many edges; you can ask for specific relationships (e.g., 'What are the direct causes of X?').\n"
+
+    # Identify source and sink nodes (if any)
+    source_nodes = [n for n, d in G.in_degree() if d == 0]
+    sink_nodes = [n for n, d in G.out_degree() if d == 0]
+    
+    if source_nodes:
+        summary += f"Variables with no known causes (source nodes): {', '.join(source_nodes)}.\n"
+    if sink_nodes:
+        summary += f"Variables with no known effects (sink nodes): {', '.join(sink_nodes)}.\n"
+        
+    return summary

@@ -3,6 +3,10 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 import pandas as pd
 import numpy as np
 import logging
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -55,3 +59,30 @@ class DataPreprocessor:
         except Exception as e:
             logger.exception(f"Error preprocessing data: {str(e)}")
             raise
+    
+def summarize_dataframe_for_chatbot(data_list):
+        """
+        Generates a test summary of the DataFrame for chatbot interaction."""
+        if not data_list:
+            return "No data loaded."
+        df = pd.DataFrame(data_list)
+        nums_rows, num_cols = df.shape
+
+        col_info = []
+        for col in df.columns:
+            dtype = df[col].dtype
+            unique_vals = df[col].nunique()
+            missing_count = df[col].isnull().sum()
+
+            info = f"-{col} (Type:{dtype}"
+            if pd.api.types.is_numeric_dtype(df[col]):
+                info +=f", Min:{df[col].min():.2f}, Max:{df[col].max():.2f}"
+            else:
+                info += f", Unique:{unique_vals}"
+            
+            if missing_count > 0:
+                info += f", Missing:{missing_count}"
+            info += ")"
+            col_info.append(info)
+        summary = (f"Dataset Summary:\n- Rows: {nums_rows}, Columns: {num_cols}\nColumns:\n" + "\n".join(col_info))
+        return summary
